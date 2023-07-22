@@ -1,0 +1,12 @@
+# Project place file
+/ui-previewer.rbxlx
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+# LuauLSP stuff
+sourcemap.json
+
+# VSCode stuff
+*.vscode
