@@ -14,6 +14,7 @@ return {
     getPreview = Empties.funcNil :: () -> any,
     startPreview = Signal.new(),
     finishPreview = Signal.new(),
+    previewStateChanged = Signal.new(),
 
     inputStorySelected = Signal.new() :: Signal<ModuleScript, any>,
     inputStoryRefresh = Signal.new(),

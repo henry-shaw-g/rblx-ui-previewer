@@ -155,6 +155,9 @@ do
             self:_updateFooter(nil)
             self:_updateMenu(nil)
         end)
+        State.previewStateChanged:connect(function(preview) 
+            self:_updateFooter(preview)
+        end)
 
         self.buttonRefresh.Activated:connect(function() 
             State.inputStoryRefresh:fire()
@@ -172,6 +175,22 @@ do
         if preview then
             local moduleScript = preview.moduleScript
             self.storyTitleLabel.Text = `story: {moduleScript.Name}`
+           
+
+            local statusText: string
+            local statusColor: Color3
+            if preview.state == "running" then
+                statusText = "Running"
+                statusColor = Color3.fromRGB(98, 255, 0)
+            elseif preview.state == "failed" then
+                statusText = "Failed"
+                statusColor = Color3.fromRGB(255, 64, 64)
+            else
+                statusText = "----"
+                statusColor = Color3.fromRGB(104, 104, 104)
+            end
+            self.storyStatusLabel.Text = statusText
+            self.storyStatusLabel.TextColor3 = statusColor
             self.storyStatusLabel.Visible = true
         else
             self.storyTitleLabel.Text = "story: N/A"

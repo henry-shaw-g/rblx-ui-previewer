@@ -9,9 +9,15 @@ local GuiLib = require(script.Parent.Util.GuiLib)
 local New = GuiLib.new
 
 -- VARIABLES
+local MSG_TAG = "[ui-previewer]:"
+local RUN_MSG = MSG_TAG .. " previewing story: %s."
+local REFRESH_MSG = MSG_TAG .. " refreshing story: %s."
+
 local ERROR_MSG_TAG = "[ui-previewer]:"
-local PARSE_ERROR_MSG = ERROR_MSG_TAG .. "parsing/syntax error loading module.\nmodulescript: %s.\nerror: %s"
-local REQUIRE_ERROR_MSG = ERROR_MSG_TAG .. "error requiring module.\nmodulescript: %s\nerror: %%s\ntrace:\n%%s"
+local PARSE_ERROR_MSG = ERROR_MSG_TAG .. " parsing/syntax error loading module.\nmodulescript: %s.\nerror: %s"
+local REQUIRE_ERROR_MSG = ERROR_MSG_TAG .. " error requiring module.\nmodulescript: %s\nerror: %%s\ntrace:\n%%s"
+local NOTFUNCTION_ERROR_MSG = ERROR_MSG_TAG .. " story did not return a function.\nstory modulescript: %s"
+local STORY_ERROR_MSG = ERROR_MSG_TAG .. " error while running story.\nerror: %s\ntrace:\n%s"
 
 -- MODULE
 local Previewer = {}
@@ -22,8 +28,16 @@ function Previewer.new(props)
     self._targetFrame = props.targetFrame
     self._events = props.events
     self._previewing = nil
+    self._state = 1
 
     return self
+end
+
+local function setState(self, data, state: "running" | "failed")
+    data.state = state
+    if self._previewing == data then
+        self._events.stateChanged:fire(data)
+    end
 end
 
 local function runPreview(self, data)
@@ -85,12 +99,29 @@ local function runPreview(self, data)
     }
     temp.cleaner:add(tempTargetFrame)
 
-    local module = temp.require(moduleScript)
-    if typeof(module) ~= "function" then
-        error(`[ui-previewer]: story did not return a function. story: {moduleScript:GetFullName()}`)
+    local succStoryRequire, module = pcall(temp.require, moduleScript)
+    if not succStoryRequire then
+        setState(self, data, "failed")
+        return
     end
 
-    temp.cleaner:add(module(tempTargetFrame)) -- todo: make this in a task.defer?
+
+    if typeof(module) ~= "function" then
+        warn(NOTFUNCTION_ERROR_MSG:format(moduleScript:GetFullName()))
+    end
+
+    -- task.defer(function() 
+    --     temp.cleaner:add(module(tempTargetFrame))
+    -- end)
+    setState(self, data, "running")
+    local succStoryRun, cleanup = Runtime.pcallSpawn(module, 
+        STORY_ERROR_MSG,
+        tempTargetFrame)
+    if succStoryRun then
+        temp.cleaner:add(cleanup)
+    else
+        setState(self, data, "failed")
+    end
 end
 
 function Previewer:preview(moduleScript)
@@ -106,6 +137,7 @@ function Previewer:preview(moduleScript)
     }
     self._previewing = data
     self._events.startPreview:fire(data)
+    print(RUN_MSG:format(data.moduleScript:GetFullName()))
     runPreview(self, data)
 end
 
@@ -116,6 +148,8 @@ function Previewer:refresh()
     if temp then
         temp.cleaner:clean()
     end
+
+    print(REFRESH_MSG:format(data.moduleScript:GetFullName()))
     runPreview(self, data)
 end
 
