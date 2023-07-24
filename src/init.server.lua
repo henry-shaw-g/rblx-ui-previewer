@@ -1,9 +1,9 @@
 local RunService = game:GetService("RunService")
 
-local State = require(script.Parent.State)
-local UI = require(script.Parent.UI)
-local StoryCollector = require(script.Parent.StoryCollector)
-local Previewer = require(script.Parent.Previewer)
+local State = require(script.State)
+local UI = require(script.UI)
+local StoryCollector = require(script.StoryCollector)
+local Previewer = require(script.Previewer)
 
 -- SCRIPT
 local function makeToolbar()
@@ -49,6 +49,7 @@ local function init()
         events = {
             startPreview = State.startPreview,
             finishPreview = State.finishPreview,
+            stateChanged = State.previewStateChanged,
         },
     })
     State.getPreview = function()
