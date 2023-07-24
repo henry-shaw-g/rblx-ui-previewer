@@ -3,9 +3,15 @@
     note: it is vital that everything is 
 ]]
 
+local Runtime = require(script.Parent.Util.Runtime)
 local Cleaner = require(script.Parent.Util.Cleaner)
 local GuiLib = require(script.Parent.Util.GuiLib)
 local New = GuiLib.new
+
+-- VARIABLES
+local ERROR_MSG_TAG = "[ui-previewer]:"
+local PARSE_ERROR_MSG = ERROR_MSG_TAG .. "parsing/syntax error loading module.\nmodulescript: %s.\nerror: %s"
+local REQUIRE_ERROR_MSG = ERROR_MSG_TAG .. "error requiring module.\nmodulescript: %s\nerror: %%s\ntrace:\n%%s"
 
 -- MODULE
 local Previewer = {}
@@ -35,8 +41,9 @@ local function runPreview(self, data)
         assert(moduleScript ~= nil, "cannot pass nil to require.")
         assert(typeof(moduleScript) == "Instance" and moduleScript:IsA("ModuleScript"), "expected modulescript for require.")
 
-        if temp.moduleCache[moduleScript] then
-            return
+        local cached = temp.moduleCache[moduleScript]
+        if cached then
+            return cached
         end
 
         temp.cleaner:add(moduleScript.Changed:Connect(function()
@@ -46,15 +53,17 @@ local function runPreview(self, data)
         
         local loader, loadStringErr = loadstring(moduleScript.Source, moduleScript:GetFullName())
         if not loader then
-            error("error loading module script.\n" .. loadStringErr)
+            warn(PARSE_ERROR_MSG:format(moduleScript:GetFullName(), loadStringErr))
+            error("requesting module experienced an error while loading.")
+        end
+        
+        local succ, moduleOrErr = Runtime.pcallSpawn(loader, REQUIRE_ERROR_MSG:format(moduleScript:GetFullName()), "trace:\n%s")
+        if not succ then
+            error("requested module experienced an error while loading.")
         end
 
-        local succ, moduleOrErr = pcall(loader)
         if not succ then
-            error("error requiring module script.\n" .. moduleOrErr)
-        end
-        if not moduleOrErr then
-            error(`module returned no values. module: {moduleScript:GetFullName()}`)
+            return
         end
 
         setfenv(moduleOrErr, setmetatable({
@@ -78,7 +87,7 @@ local function runPreview(self, data)
 
     local module = temp.require(moduleScript)
     if typeof(module) ~= "function" then
-        error(`ui-previewer: story did not return a function. story: {moduleScript:GetFullName()}`)
+        error(`[ui-previewer]: story did not return a function. story: {moduleScript:GetFullName()}`)
     end
 
     temp.cleaner:add(module(tempTargetFrame)) -- todo: make this in a task.defer?
