@@ -80,6 +80,6 @@ local function init()
     end)
 end
 
-if RunService:IsStudio() and not RunService:IsRunMode() then
+if RunService:IsStudio() and not (RunService:IsRunMode() or RunService:IsRunning()) then
     init()
 end

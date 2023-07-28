@@ -65,12 +65,20 @@ local function runPreview(self, data)
             -- refresh
         end))
         
+        local fenv = setmetatable({
+            _G = temp.envGlobals,
+            shared = temp.envGlobals,
+            script = moduleScript,
+            require = temp.require,
+        }, temp.envMeta) :: any
+
         local loader, loadStringErr = loadstring(moduleScript.Source, moduleScript:GetFullName())
         if not loader then
             warn(PARSE_ERROR_MSG:format(moduleScript:GetFullName(), loadStringErr))
             error("requesting module experienced an error while loading.")
         end
         
+        setfenv(loader, fenv)
         local succ, moduleOrErr = Runtime.pcallSpawn(loader, REQUIRE_ERROR_MSG:format(moduleScript:GetFullName()), "trace:\n%s")
         if not succ then
             error("requested module experienced an error while loading.")
@@ -79,13 +87,6 @@ local function runPreview(self, data)
         if not succ then
             return
         end
-
-        setfenv(moduleOrErr, setmetatable({
-            _G = temp.envGlobals,
-            shared = temp.envGlobals,
-            script = moduleScript,
-            require = temp.require,
-        }, temp.envMeta) :: any)
         temp.moduleCache[moduleScript] = moduleOrErr
 
         return moduleOrErr
