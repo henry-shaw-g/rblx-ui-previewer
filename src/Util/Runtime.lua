@@ -1,6 +1,6 @@
 local Errors = {}
 
-local function pcallSpawnRun(f, state, errFmt, traceFmt, ...)
+local function pcallSpawnRun(f, state, errFmt, ...)
     state.results = table.pack(xpcall(f, function(err)
         warn(errFmt:format(err, debug.traceback(nil, 2)))
         return err
