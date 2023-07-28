@@ -41,7 +41,7 @@ function StoryCollector.new(props)
 end
 
 local function addStory(self, moduleScript)
-    print("adding story", moduleScript:GetFullName())
+    print("[ui-previewer]: adding story", moduleScript:GetFullName())
     local storyData = {
         cleaner = Cleaner.new(),
     }
@@ -50,7 +50,7 @@ local function addStory(self, moduleScript)
 end
 
 local function removeStory(self, moduleScript)
-    print("removing story", moduleScript:GetFullName())
+    print("[ui-previewer]: removing story", moduleScript:GetFullName())
     local storyData = self.list[moduleScript]
     self.list[moduleScript] = nil
     if storyData then
