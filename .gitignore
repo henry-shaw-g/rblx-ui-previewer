@@ -2,8 +2,9 @@
 /ui-previewer.rbxlx
 
 # Roblox Studio lock files
-/*.rbxlx.lock
-/*.rbxl.lock
+*.rbxlx.lock
+*.rbxl.lock
+test.testplace.rbxlx.lock
 
 # LuauLSP stuff
 sourcemap.json
