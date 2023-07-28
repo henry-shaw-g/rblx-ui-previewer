@@ -419,8 +419,6 @@ do
 
         self.previewSection = PreviewSection.new(previewProps)
         self.previewSection:init()
-
-        self:enable()
     end
 
     function UI:toggle()
