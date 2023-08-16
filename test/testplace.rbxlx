@@ -11,9 +11,9 @@
 			<BinaryString name="CollisionGroupData">AQEABP////8HRGVmYXVsdA==</BinaryString>
 			<Ref name="CurrentCamera">RBXF828C35D58574D57B008160717EF5204</Ref>
 			<double name="DistributedGameTime">0</double>
-			<bool name="EnableFluidForces">false</bool>
 			<bool name="ExplicitAutoJoints">true</bool>
 			<float name="FallenPartsDestroyHeight">-500</float>
+			<token name="FluidForces">0</token>
 			<Vector3 name="GlobalWind">
 				<X>0</X>
 				<Y>0</Y>
@@ -663,6 +663,7 @@ zNLfaoZA///+//PAj5CH]]></BinaryString>
 			<bool name="AllowCustomAnimations">true</bool>
 			<BinaryString name="AttributesSerialize"></BinaryString>
 			<bool name="AutoJumpEnabled">true</bool>
+			<token name="AvatarJointUpgrade">151587082</token>
 			<float name="CameraMaxZoomDistance">128</float>
 			<float name="CameraMinZoomDistance">0.5</float>
 			<token name="CameraMode">0</token>
@@ -671,6 +672,7 @@ zNLfaoZA///+//PAj5CH]]></BinaryString>
 			<float name="CharacterMaxSlopeAngle">89</float>
 			<bool name="CharacterUseJumpPower">false</bool>
 			<float name="CharacterWalkSpeed">16</float>
+			<token name="DeathStyle">0</token>
 			<token name="DevCameraOcclusionMode">0</token>
 			<token name="DevComputerCameraMovementMode">0</token>
 			<token name="DevComputerMovementMode">0</token>
@@ -1007,6 +1009,47 @@ end]]></ProtectedString>
 				<UniqueId name="UniqueId">23695053b1f0da0f04d060e600003d19</UniqueId>
 			</Properties>
 		</Item>
+		<Item class="ModuleScript" referent="RBX7027B6D38C4D4BEF942A24C865A64F75">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+				<Content name="LinkedSource"><null></null></Content>
+				<string name="Name">goofy.story</string>
+				<string name="ScriptGuid">{EF6C1867-EC9C-4173-B416-EA11BBBBCBED}</string>
+				<ProtectedString name="Source"><![CDATA[local boofy = require(script.boofy)
+
+local function goof()
+	print("goofy")
+	boofy.boof()
+end
+
+return function()
+	goof()
+end]]></ProtectedString>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+				<UniqueId name="UniqueId">00e059c9b0393a0004d4e219000037e9</UniqueId>
+			</Properties>
+			<Item class="ModuleScript" referent="RBX7B03A8521FD14A5499B1B705AB916FFE">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">boofy</string>
+					<string name="ScriptGuid">{37E696FE-80F8-4122-B9EF-9CFA8744686D}</string>
+					<ProtectedString name="Source"><![CDATA[local boofy = {}
+
+function boofy.boof()
+	print("boof")
+end
+
+return boofy]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+					<UniqueId name="UniqueId">00e059c9b0393a0004d4e219000037f4</UniqueId>
+				</Properties>
+			</Item>
+		</Item>
 	</Item>
 	<Item class="ServerStorage" referent="RBXCDBD86561C5147DDB0585EFC44AFA111">
 		<Properties>
@@ -1206,6 +1249,7 @@ end]]></ProtectedString>
 	<Item class="ServiceVisibilityService" referent="RBX1643781B744B49479D11DF07CAECA188">
 		<Properties>
 			<BinaryString name="AttributesSerialize"></BinaryString>
+			<BinaryString name="HiddenServices">AAAAAA==</BinaryString>
 			<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
 			<string name="Name">ServiceVisibilityService</string>
 			<int64 name="SourceAssetId">-1</int64>
