@@ -352,6 +352,7 @@ do
         local widget = pluginAPI:CreateDockWidgetPluginGui("ui-previewer-widget", info) :: DockWidgetPluginGui
         widget.Title = "ui-previewer"
         widget.Name = "UIPreviewer"
+        widget.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
         return widget
     end
