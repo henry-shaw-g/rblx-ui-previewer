@@ -357,11 +357,15 @@ do
         return widget
     end
 
-    function UI.new(pluginAPI)
+    function UI.new(pluginAPI, toolbarButton: PluginToolbarButton)
         local self = setmetatable({}, META)
 
         self.enabled = false
         self.widget = makeWidget(pluginAPI)
+        self.widget:BindToClose(function() 
+            self:disable()
+        end)
+        self.toolbarButton = toolbarButton
 
         return self
     end
@@ -425,19 +429,27 @@ do
     function UI:toggle()
         if self.enabled then
             self:disable()
+            return false
         else
             self:enable()
+            return true
         end
     end
 
     function UI:enable()
         self.enabled = true
         self.widget.Enabled = true
+        if self.toolbarButton then
+            self.toolbarButton:SetActive(true)
+        end
     end
 
     function UI:disable()
         self.enabled = false
         self.widget.Enabled = false
+        if self.toolbarButton then
+            self.toolbarButton:SetActive(false)
+        end
     end
 
     function UI:getPreviewFrame()

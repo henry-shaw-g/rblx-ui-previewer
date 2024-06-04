@@ -19,7 +19,7 @@ local function makeToolbar()
 end
 
 local function makeUI(toolbar)
-    local ui = UI.new(plugin)
+    local ui = UI.new(plugin, toolbar.buttonToggle)
 
     toolbar.buttonToggle.Click:Connect(function() 
         ui:toggle()        
