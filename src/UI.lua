@@ -17,7 +17,7 @@ local UI_SAT = 0.1
 local UI_FONT = Enum.Font.SourceSans
 local UI_FONT1 = Enum.Font.SourceSansItalic
 
-local MAX_STORY_ITEM_CHARS = 25
+local MAX_STORY_ITEM_CHARS = 20
 
 local HIGHLIGHT_TWEENINFO = TweenInfo.new(0.1)
 
@@ -220,15 +220,15 @@ do
     local function storyListItemText(moduleScript)
         local s = moduleScript.Name
         local i = moduleScript
-        local c = s:len() + 1
+        local c = s:len()
 
         while i.Parent and i.Parent ~= game do
             local p = i.Parent
             local name = p.Name
 
-            c += if p.Parent and p.Parent ~= game then 3 else 1
+            c += if p and p ~= game then name:len() + 1 else 1
             if c < MAX_STORY_ITEM_CHARS then
-                i = p.Parent
+                i = p -- i was high when i made this fs
                 s = string.format("%s/%s", name, s)
             else
                 break
@@ -237,6 +237,8 @@ do
 
         if i.Parent and i.Parent ~= game then
             s = "../" .. s
+        else
+            s = "/" .. s
         end
 
         return s
