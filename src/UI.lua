@@ -244,6 +244,21 @@ do
         return s
     end
 
+    local function parentListItem(props)
+        return New "TextButton" {
+            Parent = props.Parent,
+            Size = UDim2.new(1, 0, 0, 20),
+            BackgroundColor3 = Color3.fromHSV(UI_HUE, UI_SAT, 0.8),
+            BackgroundTransparency = 1,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextSize = 16,
+            Font = Enum.Font.SourceSans,
+            TextColor3 = Color3.fromHSV(0, 0, 0.75),
+            --Text = storyListItemText(props.moduleScript),
+            Text = props.path
+        } :: TextButton
+    end
+
     local function storyListItem(props)
         local item = New "TextButton" {
             Parent = props.Parent,
@@ -254,7 +269,8 @@ do
             TextSize = 16,
             Font = Enum.Font.SourceSans,
             TextColor3 = Color3.fromHSV(0, 0, 0.9),
-            Text = storyListItemText(props.moduleScript),
+            --Text = storyListItemText(props.moduleScript),
+            Text = props.path
         } :: TextButton
 
         -- TODO: handle this on data / collector side
@@ -290,20 +306,88 @@ do
 
         return item
     end
-    
+
     function StoryListSection.new(container)
         local self = setmetatable({}, META)
         self.container = container
         self.frames = {}
+        self.tree = {}
         return self
     end
 
+    local function addChildNode(pnode, cnode)
+        table.insert(pnode.children, cnode)
+    end
+
+    local function rmChildNode(pnode, cnode)
+        local i = table.find(pnode.children, cnode)
+        if i then
+            table.remove(pnode.children, cnode)
+        end
+    end
+
+    local function count
+    -- local function findAncestorNode(self, i)
+    --     local p = i
+    --     local node
+    --     repeat
+    --         node = self.tree[p]
+    --         p = p.Parent
+    --     until node or p == game
+    -- end
+
     local function addStoryModule(self, moduleScript, storyData)
-        self.frames[moduleScript] = storyListItem({
-            Parent = self.container,
-            moduleScript = moduleScript,
-            storyData = storyData,
-        })
+        local node = self.tree[moduleScript]
+        
+        if node then
+            node.story = true
+            -- TODO: push a re-render and re-layout
+        else
+            node = {
+                story = true,
+                inst = moduleScript,
+                storyGuiObject = storyListItem({
+                    Parent = self.container,
+                    path = "story path ..."
+                }),
+                parentGuiObject = nil,
+                --partialPath = "",
+            }
+            self.tree[moduleScript] = node
+
+            local p = moduleScript.Parent
+            while p ~= game do
+                local pnode = self.tree[p]
+                if pnode then
+                    addChildNode(pnode, node)
+                    if #pnode.children > 1 and not pnode.parentGuiObject then
+                        pnode.parentGuiObject = parentListItem({
+                            Parent = self.container,
+                            path = "parent path ..."
+                        })
+                    end
+                    break
+                else
+                    pnode = {
+                        story = false,
+                        inst = p,
+                        storyGuiObject = nil,
+                        parentGuiObject = nil,
+                        children = { node }
+                    }
+                    self.tree[p] = pnode
+                end
+                node = pnode
+                p = p.Parent
+            end
+        end
+
+        -- self.frames[moduleScript] = storyListItem({
+        --     Parent = self.container,
+        --     moduleScript = moduleScript,
+        --     storyData = storyData,
+        -- })
+        
     end
 
     local function removeStoryModule(self, moduleScript, storyData)
