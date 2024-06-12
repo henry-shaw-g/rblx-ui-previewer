@@ -3,12 +3,12 @@
 ]]
 local TweenService = game:GetService("TweenService")
 
+local Cleaner = require(script.Parent.Util.Cleaner)
 local GuiLib = require(script.Parent.Util.GuiLib)
-local Sub = GuiLib.sub
-local New = GuiLib.new
-local Mend = GuiLib.mend
-local Ref = GuiLib.ref
-
+    local Sub = GuiLib.sub
+    local New = GuiLib.new
+    local Mend = GuiLib.mend
+    local Ref = GuiLib.ref
 local State = require(script.Parent.State)
 
 --  VARIABLES
@@ -247,18 +247,20 @@ do
     ]]
 
     local function parentListItem(props)
-        return New "TextButton" {
+        local item = New "TextButton" {
             Parent = props.Parent,
             Size = UDim2.new(1, 0, 0, 20),
-            BackgroundColor3 = Color3.fromHSV(UI_HUE, UI_SAT, 0.8),
+            BackgroundColor3 = Color3.fromHSV(UI_HUE, UI_SAT, 0.75),
             BackgroundTransparency = 1,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextSize = 16,
             Font = Enum.Font.SourceSans,
-            TextColor3 = Color3.fromHSV(0, 0, 0.75),
+            TextColor3 = Color3.fromHSV(0, 0, 0.65),
             --Text = storyListItemText(props.moduleScript),
             Text = props.path
         } :: TextButton
+        props.cleaner:add(item)
+        return item
     end
 
     local function storyListItem(props)
@@ -284,8 +286,6 @@ do
             item.Text = storyListItemText(props.moduleScript)
         end))
         ]]
-
-
         local hovering = false
         local function updateItemHighlight()
             local selected = false
@@ -308,6 +308,8 @@ do
             State.inputStorySelected:fire(props.moduleScript)
         end)
 
+        props.cleaner:add(item)
+
         return item
     end
 
@@ -315,6 +317,7 @@ do
         local self = setmetatable({}, META)
         self.container = container
         self.frames = {}
+        self.treeCleaner = Cleaner.new()
         self.tree = {
             [game] = {
                 story = false,
@@ -324,7 +327,8 @@ do
         return self
     end
 
-    local function makeNode(inst)
+    local function makeNode(inst: Instance, cleaner, render)
+        inst:GetPropertyChangedSignal("Name"):Connect(render)
         return {
             inst = inst,
             children = {},
@@ -385,8 +389,12 @@ do
         -- TODO: NOT THIS
         if root.parentItem then
             print("rendering parent item for ", root.inst.Name, " at ", cursor)
-            root.parentItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
-            root.parentItem.Text = path .. root.inst.Name
+            --[[root.parentItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+            root.parentItem.Text = path .. root.inst.Name]]
+            Mend(root.parentItem) {
+                Position = UDim2.new(0, cursor.X, 0, cursor.Y),
+                Text = path .. root.inst.Name,
+            }
             cursor += Vector2.new(4, 20)
             path = ""
         else
@@ -400,8 +408,12 @@ do
         for _, node in root.children do
             if node.storyItem then
                 print("rendering story item for", node.inst.Name, " at", cursor, " with path", path)
-                node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
-                node.storyItem.Text = path .. node.inst.Name
+                --[[node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+                node.storyItem.Text = path .. node.inst.Name]]
+                Mend(node.storyItem) {
+                    Position = UDim2.new(0, cursor.X, 0, cursor.Y),
+                    Text = path .. node.inst.Name,
+                }
                 cursor += Vector2.new(0, 20)
             end
         end
@@ -430,22 +442,26 @@ do
     end
 
 
+    -- tbh this name is no longer descriptive of what this function does ...
     local function renderStoryModules(self, list)
         -- clean tree
-
-        for _, node in self.tree do
-            if node.parentItem then
-                node.parentItem:Destroy()
-            end
-            if node.storyItem then
-                node.storyItem:Destroy()
-            end
-        end
-
+        -- for _, node in self.tree do
+        --     if node.parentItem then
+        --         node.parentItem:Destroy()
+        --     end
+        --     if node.storyItem then
+        --         node.storyItem:Destroy()
+        --     end
+        -- end
+        self.treeCleaner:clean()
         table.clear(self.tree)
 
+        local function doRender()
+            renderTree(self, self.tree[game], Vector2.zero, "")
+        end
+
         -- build tree
-        self.tree[game] = makeNode(game)
+        self.tree[game] = makeNode(game, self.treeCleaner, doRender)
 
         for moduleScript: ModuleScript, storyData in list do
             local node = self.tree[moduleScript]
@@ -460,12 +476,14 @@ do
                     node.parentItem = parentListItem({
                         Parent = self.container,
                         path = "story parent item",
+                        cleaner = self.treeCleaner,
                     })
                 end
                 if not node.storyItem then
                     node.storyItem = storyListItem({
                       Parent = self.container,
-                      path = "story item",  
+                      path = "story item",
+                      cleaner = self.treeCleaner, 
                     })
                 end
 
@@ -473,15 +491,17 @@ do
                 if node and parent ~= game and not node.parentItem then
                     node.parentItem = parentListItem({
                         Parent = self.container,
-                        path = "story item"                        
+                        path = "story item",
+                        cleaner = self.treeCleaner,                    
                     })
                 end
             else
-                node = makeNode(moduleScript)
+                node = makeNode(moduleScript, self.treeCleaner, doRender)
                 node.storyItem = storyListItem({
                     Parent = self.container,
                     moduleScript = moduleScript,
                     path = "story item",
+                    cleaner = self.treeCleaner,
                 })
                 self.tree[moduleScript] = node
 
@@ -494,13 +514,14 @@ do
                             pnode.parentItem = parentListItem({
                                 Parent = self.container,
                                 path = "parent item",
+                                cleaner = self.treeCleaner,
                             })
                         end
                         if not pnode.storyItem then
                             abort = true
                         end
                     else
-                        pnode = makeNode(parent)
+                        pnode = makeNode(parent, self.treeCleaner, doRender)
                         self.tree[parent] = pnode
                     end
 
@@ -512,7 +533,8 @@ do
         end
 
         -- render tree
-        renderTree(self, self.tree[game], Vector2.zero, "")
+        doRender()
+        --renderTree(self, self.tree[game], Vector2.zero, "")
     end
 
     --[[
