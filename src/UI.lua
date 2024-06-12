@@ -217,6 +217,7 @@ local StoryListSection = {}
 do
     local META = {__index = StoryListSection}
 
+    --[[
     local function storyListItemText(moduleScript)
         local s = moduleScript.Name
         local i = moduleScript
@@ -243,6 +244,7 @@ do
 
         return s
     end
+    ]]
 
     local function parentListItem(props)
         return New "TextButton" {
@@ -274,12 +276,14 @@ do
         } :: TextButton
 
         -- TODO: handle this on data / collector side
+        --[[
         props.storyData.cleaner:add(props.moduleScript:GetPropertyChangedSignal("Name"):Connect(function() 
             item.Text = storyListItemText(props.moduleScript)
         end))
         props.storyData.cleaner:add(props.moduleScript.AncestryChanged:Connect(function() 
             item.Text = storyListItemText(props.moduleScript)
         end))
+        ]]
 
 
         local hovering = false
@@ -320,6 +324,14 @@ do
         return self
     end
 
+    local function makeNode(inst)
+        return {
+            inst = inst,
+            children = {},
+        }
+    end
+
+    --[[
     local function addChildNode(pnode, cnode)
         table.insert(pnode.children, cnode)
     end
@@ -367,26 +379,153 @@ do
             end
         end
     end
+    ]]
 
-    local function renderTree(self, root, cursor: Vector2)
-        local parentItemNodes = {}
-        local storyItemNodes = {}
-        getChildItemNodes(root, parentItemNodes, storyItemNodes)
-        for _, node in parentItemNodes do
-            -- TODO: sort these ...
-            node.parentItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
-            node.parentItem.Text = node.inst.Name
-            cursor = cursor + Vector2.new(0, 20)
-            cursor = renderTree(self, node, cursor + Vector2.new(4, 0)) - Vector2.new(4, 0)
+    local function renderTree(self, root, cursor: Vector2, path: string)
+        -- TODO: NOT THIS
+        if root.parentItem then
+            print("rendering parent item for ", root.inst.Name, " at ", cursor)
+            root.parentItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+            root.parentItem.Text = path .. root.inst.Name
+            cursor += Vector2.new(4, 20)
+            path = ""
+        else
+            path ..= root.inst.Name .. "/"
         end
-        for _, node in storyItemNodes do
-            node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
-            node.storyItem.Text = node.inst.Name
-            cursor = cursor + Vector2.new(0, 20)
+
+        for _, node in root.children do
+            cursor = renderTree(self, node, cursor, path)
         end
+
+        for _, node in root.children do
+            if node.storyItem then
+                print("rendering story item for", node.inst.Name, " at", cursor, " with path", path)
+                node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+                node.storyItem.Text = path .. node.inst.Name
+                cursor += Vector2.new(0, 20)
+            end
+        end
+
+        -- local parentItemNodes = {}
+        -- local storyItemNodes = {}
+        -- getChildItemNodes(root, parentItemNodes, storyItemNodes)
+        -- for _, node in parentItemNodes do
+        --     -- TODO: sort these ...
+        --     node.parentItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+        --     node.parentItem.Text = node.inst.Name
+        --     cursor = cursor + Vector2.new(0, 20)
+        --     cursor = renderTree(self, node, cursor + Vector2.new(4, 0)) - Vector2.new(4, 0)
+        -- end
+        -- for _, node in storyItemNodes do
+        --     node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+        --     node.storyItem.Text = node.inst.Name
+        --     cursor = cursor + Vector2.new(0, 20)
+        -- end
+
+        if root.parentItem then
+            cursor -= Vector2.new(4, 0)
+        end
+
         return cursor
     end
 
+
+    local function renderStoryModules(self, list)
+        -- clean tree
+
+        for _, node in self.tree do
+            if node.parentItem then
+                node.parentItem:Destroy()
+            end
+            if node.storyItem then
+                node.storyItem:Destroy()
+            end
+        end
+
+        table.clear(self.tree)
+
+        -- build tree
+        self.tree[game] = makeNode(game)
+
+        for moduleScript: ModuleScript, storyData in list do
+            local node = self.tree[moduleScript]
+            local parent = moduleScript.Parent
+            
+            if not parent then
+                continue
+            end
+
+            if node then
+                if not node.parentItem then
+                    node.parentItem = parentListItem({
+                        Parent = self.container,
+                        path = "story parent item",
+                    })
+                end
+                if not node.storyItem then
+                    node.storyItem = storyListItem({
+                      Parent = self.container,
+                      path = "story item",  
+                    })
+                end
+
+                node = self.tree[parent]
+                if node and parent ~= game and not node.parentItem then
+                    node.parentItem = parentListItem({
+                        Parent = self.container,
+                        path = "story item"                        
+                    })
+                end
+            else
+                node = makeNode(moduleScript)
+                node.storyItem = storyListItem({
+                    Parent = self.container,
+                    moduleScript = moduleScript,
+                    path = "story item",
+                })
+                self.tree[moduleScript] = node
+
+                local pnode
+                local abort = false
+                while node and parent and not abort do
+                    pnode = self.tree[parent]
+                    if pnode then
+                        if parent ~= game and not pnode.parentItem then
+                            pnode.parentItem = parentListItem({
+                                Parent = self.container,
+                                path = "parent item",
+                            })
+                        end
+                        if not pnode.storyItem then
+                            abort = true
+                        end
+                    else
+                        pnode = makeNode(parent)
+                        self.tree[parent] = pnode
+                    end
+
+                    table.insert(pnode.children, node)
+                    parent = parent.Parent
+                    node = pnode
+                end
+            end
+        end
+
+        -- render tree
+        renderTree(self, self.tree[game], Vector2.zero, "")
+    end
+
+    --[[
+    local function addStoryModule(self, _, _, list)
+        renderStoryModules(self, list)
+    end
+
+    local function removeStoryModule(self, _, _, list)
+        renderStoryModules(self, list)
+    end
+    ]]
+
+    --[[
     local function addStoryModule(self, moduleScript, storyData)
         local node = self.tree[moduleScript]
         
@@ -466,15 +605,26 @@ do
             frame:Destroy()
         end
     end
+    ]]
 
     function StoryListSection:init()
+        --[[
         New "UIListLayout" {
             Parent = self.container,
             FillDirection = Enum.FillDirection.Vertical,
             HorizontalAlignment = Enum.HorizontalAlignment.Left,
             VerticalAlignment = Enum.VerticalAlignment.Top,
         }
+        ]]
 
+        renderStoryModules(self, State.stories)
+        State.storyAdded:connect(function() 
+            renderStoryModules(self, State.stories)
+        end)
+        State.storyRemoved:connect(function() 
+            renderStoryModules(self, State.stories)
+        end)
+        --[[
         for moduleScript, storyData in State.stories do
             addStoryModule(self, moduleScript, storyData)
         end
@@ -484,6 +634,7 @@ do
         State.storyRemoved:connect(function(moduleScript, storyData) 
             removeStoryModule(self, moduleScript, storyData)
         end)
+        ]]
     end
 end
 
