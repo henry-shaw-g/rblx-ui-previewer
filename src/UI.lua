@@ -311,7 +311,12 @@ do
         local self = setmetatable({}, META)
         self.container = container
         self.frames = {}
-        self.tree = {}
+        self.tree = {
+            [game] = {
+                story = false,
+                parenting = true, -- dont really care about this ...
+            }
+        }
         return self
     end
 
@@ -326,7 +331,18 @@ do
         end
     end
 
-    local function count
+    local function countChildGuiObjects(pnode)
+        local c = 0
+        for _, cnode in pnode.children do
+            if cnode.storyItem then
+                c += 1
+            end
+            if cnode.parentItem then
+                c += 1
+            end
+        end
+        return c
+    end
     -- local function findAncestorNode(self, i)
     --     local p = i
     --     local node
@@ -336,32 +352,87 @@ do
     --     until node or p == game
     -- end
 
+    local function getChildItemNodes(node, parentItemNodes, storyItemNodes)
+        -- note: same node may be present in parent and story item nodes
+        for _, cnode in node.children do
+            if not cnode.parentItem and not cnode.storyItem then
+                getChildItemNodes(cnode, parentItemNodes, storyItemNodes)
+            else
+                if cnode.parentItem then
+                    table.insert(parentItemNodes, cnode)
+                end
+                if cnode.storyItem then
+                    table.insert(storyItemNodes, cnode)
+                end
+            end
+        end
+    end
+
+    local function renderTree(self, root, cursor: Vector2)
+        local parentItemNodes = {}
+        local storyItemNodes = {}
+        getChildItemNodes(root, parentItemNodes, storyItemNodes)
+        for _, node in parentItemNodes do
+            -- TODO: sort these ...
+            node.parentItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+            node.parentItem.Text = node.inst.Name
+            cursor = cursor + Vector2.new(0, 20)
+            cursor = renderTree(self, node, cursor + Vector2.new(4, 0)) - Vector2.new(4, 0)
+        end
+        for _, node in storyItemNodes do
+            node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+            node.storyItem.Text = node.inst.Name
+            cursor = cursor + Vector2.new(0, 20)
+        end
+        return cursor
+    end
+
     local function addStoryModule(self, moduleScript, storyData)
         local node = self.tree[moduleScript]
         
         if node then
-            node.story = true
+            node.storyItem = storyListItem({
+                Parent = self.container,
+                path = "story item ..."
+            })
+
+            if countChildGuiObjects(node) > 1 and not node.parentItem then
+                node.parentItem = parentListItem({
+                    Parent = self.container,
+                    path = "parent item ..."
+                })
+            end
+
+            local p = moduleScript.Parent   -- TODO: handle edge cases where parent isn't in tree ????
+            local pnode = self.tree[p]
+            
+            if countChildGuiObjects(pnode) > 1 and not node.parentItem then
+                pnode.parentItem = parentListItem({
+                    Parent = self.container,
+                    path = "parent item ..."
+                })
+            end
+
             -- TODO: push a re-render and re-layout
         else
             node = {
-                story = true,
                 inst = moduleScript,
-                storyGuiObject = storyListItem({
+                children = {},
+                storyItem = storyListItem({
                     Parent = self.container,
                     path = "story path ..."
                 }),
-                parentGuiObject = nil,
-                --partialPath = "",
+                parentItem = nil,
             }
             self.tree[moduleScript] = node
 
             local p = moduleScript.Parent
-            while p ~= game do
+            while p do
                 local pnode = self.tree[p]
                 if pnode then
                     addChildNode(pnode, node)
-                    if #pnode.children > 1 and not pnode.parentGuiObject then
-                        pnode.parentGuiObject = parentListItem({
+                    if p ~= game and #pnode.children > 1 and not pnode.parentItem then
+                        pnode.parentItem = parentListItem({
                             Parent = self.container,
                             path = "parent path ..."
                         })
@@ -369,11 +440,9 @@ do
                     break
                 else
                     pnode = {
-                        story = false,
                         inst = p,
-                        storyGuiObject = nil,
-                        parentGuiObject = nil,
                         children = { node }
+
                     }
                     self.tree[p] = pnode
                 end
@@ -387,7 +456,7 @@ do
         --     moduleScript = moduleScript,
         --     storyData = storyData,
         -- })
-        
+        renderTree(self, self.tree[game], Vector2.zero)
     end
 
     local function removeStoryModule(self, moduleScript, storyData)
