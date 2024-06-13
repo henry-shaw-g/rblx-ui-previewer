@@ -94,18 +94,18 @@
 			<Properties>
 				<BinaryString name="AttributesSerialize"></BinaryString>
 				<CoordinateFrame name="CFrame">
-					<X>-99.8485947</X>
-					<Y>162.660721</Y>
-					<Z>-60.2502708</Z>
-					<R00>-0.931612849</R00>
-					<R01>0.336321712</R01>
-					<R02>-0.137786776</R02>
+					<X>7.96769714</X>
+					<Y>96.3313065</Y>
+					<Z>-1.09256458</Z>
+					<R00>-0.931612968</R00>
+					<R01>0.336321592</R01>
+					<R02>-0.137786761</R02>
 					<R10>-0</R10>
-					<R11>0.379105657</R11>
-					<R12>0.925353467</R12>
-					<R20>0.363452166</R20>
+					<R11>0.379105806</R11>
+					<R12>0.925353348</R12>
+					<R20>0.363452077</R20>
 					<R21>0.862071157</R21>
-					<R22>-0.353179723</R22>
+					<R22>-0.353179812</R22>
 				</CoordinateFrame>
 				<Ref name="CameraSubject">null</Ref>
 				<token name="CameraType">0</token>
@@ -114,9 +114,9 @@
 				<float name="FieldOfView">70</float>
 				<token name="FieldOfViewMode">0</token>
 				<CoordinateFrame name="Focus">
-					<X>-99.5730209</X>
-					<Y>160.810013</Y>
-					<Z>-59.543911</Z>
+					<X>8.24327087</X>
+					<Y>94.4805984</Y>
+					<Z>-0.386204481</Z>
 					<R00>1</R00>
 					<R01>0</R01>
 					<R02>0</R02>
@@ -1369,11 +1369,12 @@ zNLfaoZA///+//PAj5CH]]></BinaryString>
 						<Content name="LinkedSource"><null></null></Content>
 						<string name="Name">Boo.story</string>
 						<string name="ScriptGuid">{C83564AA-7945-4418-8C67-9DE4C7CE113D}</string>
-						<ProtectedString name="Source"><![CDATA[return function()
+						<ProtectedString name="Source"><![CDATA[return function(target)
 	local e = Instance.new("TextLabel")
 	e.Position = UDim2.new(0, 5, 0, 5)
 	e.Size = UDim2.new(0, 100, 0, 20)
 	e.Text = "Boo"
+	e.Parent = target
 end
 ]]></ProtectedString>
 						<int64 name="SourceAssetId">-1</int64>
@@ -1392,11 +1393,15 @@ end
 				<Content name="LinkedSource"><null></null></Content>
 				<string name="Name">Foo.story</string>
 				<string name="ScriptGuid">{7E032C78-3BAF-46EE-B038-2923F479E29C}</string>
-				<ProtectedString name="Source"><![CDATA[return function()
-	local e = Instance.new("TextLabel")
+				<ProtectedString name="Source"><![CDATA[return function(target)
+	local e = Instance.new("TextButton")
 	e.Position = UDim2.new(0, 5, 0, 5)
 	e.Size = UDim2.new(0, 128, 0, 32)
 	e.Text = "Click me ..."
+	e.Activated:Connect(function() 
+		print("im fooing 😳")
+	end)
+	e.Parent = target
 end
 ]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
@@ -1421,23 +1426,6 @@ end
 				<BinaryString name="Tags"></BinaryString>
 				<UniqueId name="UniqueId">11150540afc28dd6067bb62200004673</UniqueId>
 			</Properties>
-			<Item class="ModuleScript" referent="RBXCD878910AE9F4780BAA005A1162B4D81">
-				<Properties>
-					<BinaryString name="AttributesSerialize"></BinaryString>
-					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
-					<bool name="DefinesCapabilities">false</bool>
-					<UniqueId name="HistoryId">11150540afc28dd6067bb62200004673</UniqueId>
-					<Content name="LinkedSource"><null></null></Content>
-					<string name="Name">Hoes.story</string>
-					<string name="ScriptGuid">{5F62E873-C4D7-4526-A140-7F69A4245457}</string>
-					<ProtectedString name="Source"><![CDATA[return function()
-	print("hoes")
-end]]></ProtectedString>
-					<int64 name="SourceAssetId">-1</int64>
-					<BinaryString name="Tags"></BinaryString>
-					<UniqueId name="UniqueId">11150540afc28dd6067bb62200004684</UniqueId>
-				</Properties>
-			</Item>
 		</Item>
 	</Item>
 	<Item class="ServerStorage" referent="RBXDBC7D2AA363B471EA523C8DB6AC116A9">
@@ -1451,6 +1439,107 @@ end]]></ProtectedString>
 			<BinaryString name="Tags"></BinaryString>
 			<UniqueId name="UniqueId">11150540afc28dd6067bb6220000033e</UniqueId>
 		</Properties>
+		<Item class="TextButton" referent="RBX4216735DBD134B4299462BC31AECD42E">
+			<Properties>
+				<bool name="Active">true</bool>
+				<Vector2 name="AnchorPoint">
+					<X>0</X>
+					<Y>0</Y>
+				</Vector2>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<bool name="AutoButtonColor">true</bool>
+				<bool name="AutoLocalize">true</bool>
+				<token name="AutomaticSize">0</token>
+				<Color3 name="BackgroundColor3">
+					<R>1</R>
+					<G>1</G>
+					<B>1</B>
+				</Color3>
+				<float name="BackgroundTransparency">0</float>
+				<Color3 name="BorderColor3">
+					<R>0</R>
+					<G>0</G>
+					<B>0</B>
+				</Color3>
+				<token name="BorderMode">0</token>
+				<int name="BorderSizePixel">0</int>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="ClipsDescendants">false</bool>
+				<bool name="DefinesCapabilities">false</bool>
+				<bool name="Draggable">false</bool>
+				<Font name="FontFace">
+					<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family>
+					<Weight>400</Weight>
+					<Style>Normal</Style>
+					<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>
+				</Font>
+				<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+				<bool name="Interactable">true</bool>
+				<int name="LayoutOrder">0</int>
+				<float name="LineHeight">1</float>
+				<string name="LocalizationMatchIdentifier"></string>
+				<string name="LocalizationMatchedSourceText"></string>
+				<int name="MaxVisibleGraphemes">-1</int>
+				<bool name="Modal">false</bool>
+				<string name="Name">TextButton</string>
+				<Ref name="NextSelectionDown">null</Ref>
+				<Ref name="NextSelectionLeft">null</Ref>
+				<Ref name="NextSelectionRight">null</Ref>
+				<Ref name="NextSelectionUp">null</Ref>
+				<string name="OpenTypeFeatures"></string>
+				<UDim2 name="Position">
+					<XS>0</XS>
+					<XO>0</XO>
+					<YS>0</YS>
+					<YO>0</YO>
+				</UDim2>
+				<bool name="RichText">false</bool>
+				<Ref name="RootLocalizationTable">null</Ref>
+				<float name="Rotation">0</float>
+				<bool name="Selectable">true</bool>
+				<bool name="Selected">false</bool>
+				<token name="SelectionBehaviorDown">0</token>
+				<token name="SelectionBehaviorLeft">0</token>
+				<token name="SelectionBehaviorRight">0</token>
+				<token name="SelectionBehaviorUp">0</token>
+				<bool name="SelectionGroup">false</bool>
+				<Ref name="SelectionImageObject">null</Ref>
+				<int name="SelectionOrder">0</int>
+				<UDim2 name="Size">
+					<XS>0</XS>
+					<XO>200</XO>
+					<YS>0</YS>
+					<YO>50</YO>
+				</UDim2>
+				<token name="SizeConstraint">0</token>
+				<int64 name="SourceAssetId">-1</int64>
+				<token name="Style">0</token>
+				<BinaryString name="Tags"></BinaryString>
+				<string name="Text">Button</string>
+				<Color3 name="TextColor3">
+					<R>0</R>
+					<G>0</G>
+					<B>0</B>
+				</Color3>
+				<token name="TextDirection">0</token>
+				<bool name="TextScaled">false</bool>
+				<float name="TextSize">14</float>
+				<Color3 name="TextStrokeColor3">
+					<R>0</R>
+					<G>0</G>
+					<B>0</B>
+				</Color3>
+				<float name="TextStrokeTransparency">1</float>
+				<float name="TextTransparency">0</float>
+				<token name="TextTruncate">0</token>
+				<bool name="TextWrapped">false</bool>
+				<token name="TextXAlignment">2</token>
+				<token name="TextYAlignment">1</token>
+				<UniqueId name="UniqueId">0a3b546e3941df86067ca52b0000483b</UniqueId>
+				<bool name="Visible">true</bool>
+				<int name="ZIndex">1</int>
+			</Properties>
+		</Item>
 	</Item>
 	<Item class="ReplicatedStorage" referent="RBX7EE28EC4484D40FD8BE8BB372E4B39A3">
 		<Properties>
@@ -1463,6 +1552,35 @@ end]]></ProtectedString>
 			<BinaryString name="Tags"></BinaryString>
 			<UniqueId name="UniqueId">11150540afc28dd6067bb6220000033f</UniqueId>
 		</Properties>
+		<Item class="Folder" referent="RBXEFE3731F04C2474B94F96254A7748259">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+				<string name="Name">usr</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+				<UniqueId name="UniqueId">0a3b546e3941df86067ca52b000047cd</UniqueId>
+			</Properties>
+			<Item class="ModuleScript" referent="RBXE466CEB2B773423DA4D8BF66A8BF14B1">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<UniqueId name="HistoryId">11150540afc28dd6067bb62200004673</UniqueId>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">Hoes.story</string>
+					<string name="ScriptGuid">{5F62E873-C4D7-4526-A140-7F69A4245457}</string>
+					<ProtectedString name="Source"><![CDATA[return function()
+	print("hoes")
+end]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+					<UniqueId name="UniqueId">0a3b546e3941df86067ca52b000047d2</UniqueId>
+				</Properties>
+			</Item>
+		</Item>
 	</Item>
 	<Item class="LuaWebService" referent="RBX704C2365F23D4975B702054AF37DD2C5">
 		<Properties>
