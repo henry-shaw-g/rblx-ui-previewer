@@ -36,7 +36,9 @@ local function init()
         events = {
             added = State.storyAdded,
             removed = State.storyRemoved,
-            changed = State.storyChanged,
+            -- changed = State.storyChanged,
+            ancestryChanged = State.storyAncestryChanged,
+            renamed = State.storyRenamed,
         }
     })
     collector:init()

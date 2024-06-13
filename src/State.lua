@@ -9,7 +9,8 @@ return {
     stories = {},
     storyAdded = Signal.new() :: Signal<ModuleScript, any>,
     storyRemoved = Signal.new() :: Signal<ModuleScript, any>,
-    storyChanged = Signal.new() :: Signal<ModuleScript, any>,
+    storyAncestryChanged = Signal.new() :: Signal<ModuleScript, any>,
+    storyRenamed = Signal.new() :: Signal<ModuleScript, any>,               -- currently not used ...
 
     getPreview = Empties.funcNil :: () -> any,
     startPreview = Signal.new(),
