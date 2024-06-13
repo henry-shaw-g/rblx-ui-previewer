@@ -328,7 +328,7 @@ do
     end
 
     local function makeNode(inst: Instance, cleaner, render)
-        inst:GetPropertyChangedSignal("Name"):Connect(render)
+        cleaner:add(inst:GetPropertyChangedSignal("Name"):Connect(render))
         return {
             inst = inst,
             children = {},
@@ -385,38 +385,42 @@ do
     end
     ]]
 
-    local function renderTree(self, root, cursor: Vector2, path: string)
+    local function renderTreeParentPass()
+    end
+
+    local function renderTreeStoryPass()
+    end
+
+    local function isParentNode(node)
+        return node.parentItem or node.inst == game
+    end
+
+    local function renderTree(self, root, cursor: Vector2, path: string, descedants, excludeFromPath)
         -- TODO: NOT THIS
+        if not excludeFromPath then
+            path ..= root.inst.Name .. "/"
+        end
         if root.parentItem then
             print("rendering parent item for ", root.inst.Name, " at ", cursor)
             --[[root.parentItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
             root.parentItem.Text = path .. root.inst.Name]]
             Mend(root.parentItem) {
                 Position = UDim2.new(0, cursor.X, 0, cursor.Y),
-                Text = path .. root.inst.Name,
+                Text = path,
             }
-            cursor += Vector2.new(4, 20)
+            cursor += Vector2.new(8, 20)
+        end
+
+        if isParentNode(root) then
             path = ""
-        else
-            path ..= root.inst.Name .. "/"
+            descedants = {}
         end
 
         for _, node in root.children do
-            cursor = renderTree(self, node, cursor, path)
+            cursor = renderTree(self, node, cursor, path, descedants)
         end
 
-        for _, node in root.children do
-            if node.storyItem then
-                print("rendering story item for", node.inst.Name, " at", cursor, " with path", path)
-                --[[node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
-                node.storyItem.Text = path .. node.inst.Name]]
-                Mend(node.storyItem) {
-                    Position = UDim2.new(0, cursor.X, 0, cursor.Y),
-                    Text = path .. node.inst.Name,
-                }
-                cursor += Vector2.new(0, 20)
-            end
-        end
+        
 
         -- local parentItemNodes = {}
         -- local storyItemNodes = {}
@@ -434,13 +438,54 @@ do
         --     cursor = cursor + Vector2.new(0, 20)
         -- end
 
-        if root.parentItem then
-            cursor -= Vector2.new(4, 0)
+        if isParentNode(root) then
+            for _, node in descedants do
+                if node.storyItem then
+                    print("rendering story item for", node.inst.Name, " at", cursor, " with path", path)
+                    --[[node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+                    node.storyItem.Text = path .. node.inst.Name]]
+                    Mend(node.storyItem) {
+                        Position = UDim2.new(0, cursor.X, 0, cursor.Y),
+                        --Text = path .. node.inst.Name,
+                    }
+                    cursor += Vector2.new(0, 20)
+                end
+            end
+
+            for _, node in root.children do
+                if node.storyItem then
+                    print("rendering story item for", node.inst.Name, " at", cursor, " with path", path)
+                    --[[node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
+                    node.storyItem.Text = path .. node.inst.Name]]
+                    Mend(node.storyItem) {
+                        Position = UDim2.new(0, cursor.X, 0, cursor.Y),
+                        Text = path .. node.inst.Name,
+                    }
+                    cursor += Vector2.new(0, 20)
+                end
+            end
+
+            
+        else
+            for _, node in root.children do
+                if node.storyItem then
+                    table.insert(descedants, node)
+                    Mend(node.storyItem) {
+                        Text = path .. node.inst.Name
+                    }
+                end
+            end
         end
 
+        if root.parentItem then
+            cursor -= Vector2.new(8, 0)
+        end
         return cursor
     end
 
+    local function renderRoot(self)
+        renderTree(self, self.tree[game], Vector2.zero, "", {}, true)
+    end
 
     -- tbh this name is no longer descriptive of what this function does ...
     local function renderStoryModules(self, list)
@@ -456,12 +501,8 @@ do
         self.treeCleaner:clean()
         table.clear(self.tree)
 
-        local function doRender()
-            renderTree(self, self.tree[game], Vector2.zero, "")
-        end
-
         -- build tree
-        self.tree[game] = makeNode(game, self.treeCleaner, doRender)
+        self.tree[game] = makeNode(game, self.treeCleaner, function() renderRoot(self) end)
 
         for moduleScript: ModuleScript, storyData in list do
             local node = self.tree[moduleScript]
@@ -496,7 +537,7 @@ do
                     })
                 end
             else
-                node = makeNode(moduleScript, self.treeCleaner, doRender)
+                node = makeNode(moduleScript, self.treeCleaner, function() renderRoot(self) end)
                 node.storyItem = storyListItem({
                     Parent = self.container,
                     moduleScript = moduleScript,
@@ -521,7 +562,7 @@ do
                             abort = true
                         end
                     else
-                        pnode = makeNode(parent, self.treeCleaner, doRender)
+                        pnode = makeNode(parent, self.treeCleaner, function() renderRoot(self) end)
                         self.tree[parent] = pnode
                     end
 
@@ -533,7 +574,7 @@ do
         end
 
         -- render tree
-        doRender()
+        renderRoot(self)
         --renderTree(self, self.tree[game], Vector2.zero, "")
     end
 
@@ -645,6 +686,12 @@ do
         end)
         State.storyRemoved:connect(function() 
             renderStoryModules(self, State.stories)
+        end)
+        State.storyAncestryChanged:connect(function() 
+            renderStoryModules(self, State.stories)
+        end)
+        State.storyRenamed:connect(function() 
+            renderRoot(self)
         end)
         --[[
         for moduleScript, storyData in State.stories do

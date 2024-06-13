@@ -65,10 +65,12 @@ local function startTracking(self, candidate: ModuleScript)
         cleaner = Cleaner.new()
     }
 
-    local function updateIsStory()
+    local function onRenamed()
         if isStory(self.list, candidate) then
             if not canBeStory(candidate) then
                 removeStory(self, candidate)
+            else
+                self.events.renamed:fire(candidate)
             end
         else
             if canBeStory(candidate) then
@@ -76,8 +78,16 @@ local function startTracking(self, candidate: ModuleScript)
             end
         end
     end
-    updateIsStory()
-    trackData.cleaner:add(candidate:GetPropertyChangedSignal("Name"):Connect(updateIsStory))
+
+    local function onAncestryChanged()
+        if isStory(self.list, candidate) then
+            self.events.ancestryChanged:fire(candidate)
+        end
+    end
+
+    onRenamed()
+    trackData.cleaner:add(candidate:GetPropertyChangedSignal("Name"):Connect(onRenamed))
+    trackData.cleaner:add(candidate.AncestryChanged:Connect(onAncestryChanged))
 
     self.tracked[candidate] = trackData
 end
@@ -105,11 +115,12 @@ function StoryCollector:init()
     end
 
     for _, target: Instance in self.targets do
+        -- NOTE: it is moderately important that these be called before looping through existing descendants
+        self.cleaner:add(target.DescendantAdded:Connect(onDescendant))
+        self.cleaner:add(target.DescendantRemoving:Connect(onDescendantRemoving))
         for _, descendant in target:GetDescendants() do
             onDescendant(descendant)
         end
-        self.cleaner:add(target.DescendantAdded:Connect(onDescendant))
-        self.cleaner:add(target.DescendantRemoving:Connect(onDescendantRemoving))
     end
 end
 

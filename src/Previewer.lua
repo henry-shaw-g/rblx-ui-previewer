@@ -45,7 +45,7 @@ local function runPreview(self, data)
     local temp = {
         moduleCache = {},
         envGlobals = {},
-        envMeta = {__index = getfenv(0)},
+        envMeta = {__index = getfenv(0)},   -- < STFU LSP YOU STINKY LITTLE BITCH, IM BETTER THAN YOU GRRRRRRR
         cleaner = Cleaner.new(),
         require = nil,
     }
