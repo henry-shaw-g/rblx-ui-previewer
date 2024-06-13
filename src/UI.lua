@@ -17,9 +17,11 @@ local UI_SAT = 0.1
 local UI_FONT = Enum.Font.SourceSans
 local UI_FONT1 = Enum.Font.SourceSansItalic
 
-local MAX_STORY_ITEM_CHARS = 20
-
 local HIGHLIGHT_TWEENINFO = TweenInfo.new(0.1)
+
+local ZINDEX_BACK = 0
+local ZINDEX_PREVIEW = 256
+local ZINDEX_LIST = 512
 
 -- PRIVATE
 local function tweenProps(i: Instance, goals, tweenInfo)
@@ -35,8 +37,8 @@ do
     local META = {__index = PreviewSection}
 
     local STATUS_COLOR_RUNNING = Color3.fromRGB(0, 148, 12)
-    local STATUS_COLOR_COMPLETE = Color3.fromRGB(21, 255, 0)
-    local STATUS_COLOR_FAILED = Color3.fromRGB(236, 14, 14)
+    -- local STATUS_COLOR_COMPLETE = Color3.fromRGB(21, 255, 0)
+    -- local STATUS_COLOR_FAILED = Color3.fromRGB(236, 14, 14)
 
     local function headerButton(props)
         local outProps = {
@@ -217,35 +219,6 @@ local StoryListSection = {}
 do
     local META = {__index = StoryListSection}
 
-    --[[
-    local function storyListItemText(moduleScript)
-        local s = moduleScript.Name
-        local i = moduleScript
-        local c = s:len()
-
-        while i.Parent and i.Parent ~= game do
-            local p = i.Parent
-            local name = p.Name
-
-            c += if p and p ~= game then name:len() + 1 else 1
-            if c < MAX_STORY_ITEM_CHARS then
-                i = p -- i was high when i made this fs
-                s = string.format("%s/%s", name, s)
-            else
-                break
-            end
-        end
-
-        if i.Parent and i.Parent ~= game then
-            s = "../" .. s
-        else
-            s = "/" .. s
-        end
-
-        return s
-    end
-    ]]
-
     local function parentListItem(props)
         local item = New "TextButton" {
             Parent = props.Parent,
@@ -256,10 +229,29 @@ do
             TextSize = 16,
             Font = Enum.Font.SourceSans,
             TextColor3 = Color3.fromHSV(0, 0, 0.65),
+            ClipsDescendants = true,
             --Text = storyListItemText(props.moduleScript),
             Text = props.path
         } :: TextButton
         props.cleaner:add(item)
+
+        local hovering = false
+        local function updateItemHighlight()
+            if hovering then
+                item.ClipsDescendants = false
+            else
+                item.ClipsDescendants = true
+            end
+        end
+        item.MouseEnter:Connect(function() 
+            hovering = true
+            updateItemHighlight()
+        end)
+        item.MouseLeave:Connect(function()
+            hovering = false
+            updateItemHighlight()
+        end)
+
         return item
     end
 
@@ -274,7 +266,8 @@ do
             Font = Enum.Font.SourceSans,
             TextColor3 = Color3.fromHSV(0, 0, 0.9),
             --Text = storyListItemText(props.moduleScript),
-            Text = props.path
+            Text = props.path,
+            ClipsDescendants = true,
         } :: TextButton
 
         -- TODO: handle this on data / collector side
@@ -293,6 +286,11 @@ do
                 tweenProps(item, {BackgroundTransparency = 0.75}, HIGHLIGHT_TWEENINFO)
             else
                 tweenProps(item, {BackgroundTransparency = 1,}, HIGHLIGHT_TWEENINFO)
+            end
+            if hovering then
+                item.ClipsDescendants = false
+            else
+                item.ClipsDescendants = true
             end
         end
 
@@ -335,62 +333,6 @@ do
         }
     end
 
-    --[[
-    local function addChildNode(pnode, cnode)
-        table.insert(pnode.children, cnode)
-    end
-
-    local function rmChildNode(pnode, cnode)
-        local i = table.find(pnode.children, cnode)
-        if i then
-            table.remove(pnode.children, cnode)
-        end
-    end
-
-    local function countChildGuiObjects(pnode)
-        local c = 0
-        for _, cnode in pnode.children do
-            if cnode.storyItem then
-                c += 1
-            end
-            if cnode.parentItem then
-                c += 1
-            end
-        end
-        return c
-    end
-    -- local function findAncestorNode(self, i)
-    --     local p = i
-    --     local node
-    --     repeat
-    --         node = self.tree[p]
-    --         p = p.Parent
-    --     until node or p == game
-    -- end
-
-    local function getChildItemNodes(node, parentItemNodes, storyItemNodes)
-        -- note: same node may be present in parent and story item nodes
-        for _, cnode in node.children do
-            if not cnode.parentItem and not cnode.storyItem then
-                getChildItemNodes(cnode, parentItemNodes, storyItemNodes)
-            else
-                if cnode.parentItem then
-                    table.insert(parentItemNodes, cnode)
-                end
-                if cnode.storyItem then
-                    table.insert(storyItemNodes, cnode)
-                end
-            end
-        end
-    end
-    ]]
-
-    local function renderTreeParentPass()
-    end
-
-    local function renderTreeStoryPass()
-    end
-
     local function isParentNode(node)
         return node.parentItem or node.inst == game
     end
@@ -401,11 +343,9 @@ do
             path ..= root.inst.Name .. "/"
         end
         if root.parentItem then
-            print("rendering parent item for ", root.inst.Name, " at ", cursor)
-            --[[root.parentItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
-            root.parentItem.Text = path .. root.inst.Name]]
             Mend(root.parentItem) {
                 Position = UDim2.new(0, cursor.X, 0, cursor.Y),
+                Size = UDim2.new(1, -cursor.X, 0, 20),
                 Text = path,
             }
             cursor += Vector2.new(8, 20)
@@ -420,32 +360,12 @@ do
             cursor = renderTree(self, node, cursor, path, descedants)
         end
 
-        
-
-        -- local parentItemNodes = {}
-        -- local storyItemNodes = {}
-        -- getChildItemNodes(root, parentItemNodes, storyItemNodes)
-        -- for _, node in parentItemNodes do
-        --     -- TODO: sort these ...
-        --     node.parentItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
-        --     node.parentItem.Text = node.inst.Name
-        --     cursor = cursor + Vector2.new(0, 20)
-        --     cursor = renderTree(self, node, cursor + Vector2.new(4, 0)) - Vector2.new(4, 0)
-        -- end
-        -- for _, node in storyItemNodes do
-        --     node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
-        --     node.storyItem.Text = node.inst.Name
-        --     cursor = cursor + Vector2.new(0, 20)
-        -- end
-
         if isParentNode(root) then
             for _, node in descedants do
                 if node.storyItem then
-                    print("rendering story item for", node.inst.Name, " at", cursor, " with path", path)
-                    --[[node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
-                    node.storyItem.Text = path .. node.inst.Name]]
                     Mend(node.storyItem) {
                         Position = UDim2.new(0, cursor.X, 0, cursor.Y),
+                        Size = UDim2.new(1, -cursor.X, 0, 20),
                         --Text = path .. node.inst.Name,
                     }
                     cursor += Vector2.new(0, 20)
@@ -454,7 +374,6 @@ do
 
             for _, node in root.children do
                 if node.storyItem then
-                    print("rendering story item for", node.inst.Name, " at", cursor, " with path", path)
                     --[[node.storyItem.Position = UDim2.new(0, cursor.X, 0, cursor.Y)
                     node.storyItem.Text = path .. node.inst.Name]]
                     Mend(node.storyItem) {
@@ -490,14 +409,6 @@ do
     -- tbh this name is no longer descriptive of what this function does ...
     local function renderStoryModules(self, list)
         -- clean tree
-        -- for _, node in self.tree do
-        --     if node.parentItem then
-        --         node.parentItem:Destroy()
-        --     end
-        --     if node.storyItem then
-        --         node.storyItem:Destroy()
-        --     end
-        -- end
         self.treeCleaner:clean()
         table.clear(self.tree)
 
@@ -505,6 +416,7 @@ do
         self.tree[game] = makeNode(game, self.treeCleaner, function() renderRoot(self) end)
 
         for moduleScript: ModuleScript, storyData in list do
+
             local node = self.tree[moduleScript]
             local parent = moduleScript.Parent
             
@@ -546,29 +458,36 @@ do
                 })
                 self.tree[moduleScript] = node
 
-                local pnode
-                local abort = false
-                while node and parent and not abort do
-                    pnode = self.tree[parent]
-                    if pnode then
-                        if parent ~= game and not pnode.parentItem then
-                            pnode.parentItem = parentListItem({
-                                Parent = self.container,
-                                path = "parent item",
-                                cleaner = self.treeCleaner,
-                            })
-                        end
-                        if not pnode.storyItem then
-                            abort = true
-                        end
-                    else
-                        pnode = makeNode(parent, self.treeCleaner, function() renderRoot(self) end)
-                        self.tree[parent] = pnode
-                    end
+                -- build tree for missing nodes up
+                local pnode = self.tree[parent]
+                while parent and not pnode do
+                    pnode = makeNode(parent, self.treeCleaner, function() renderRoot(self) end)
+                    self.tree[parent] = pnode
 
                     table.insert(pnode.children, node)
+
                     parent = parent.Parent
                     node = pnode
+                    pnode = self.tree[parent]
+                end
+                if pnode then
+                    table.insert(pnode.children, node)
+                end
+                -- update parent nodes for existing upwards
+                local abort = false
+                while pnode and not abort do
+                    if parent ~= game and not pnode.parentItem then
+                        pnode.parentItem = parentListItem({
+                            Parent = self.container,
+                            path = "parent item",
+                            cleaner = self.treeCleaner,
+                        })
+                    end
+                    if not pnode.storyItem then
+                        abort = true
+                    end
+                    parent = parent.Parent
+                    pnode = self.tree[parent]
                 end
             end
         end
@@ -578,107 +497,7 @@ do
         --renderTree(self, self.tree[game], Vector2.zero, "")
     end
 
-    --[[
-    local function addStoryModule(self, _, _, list)
-        renderStoryModules(self, list)
-    end
-
-    local function removeStoryModule(self, _, _, list)
-        renderStoryModules(self, list)
-    end
-    ]]
-
-    --[[
-    local function addStoryModule(self, moduleScript, storyData)
-        local node = self.tree[moduleScript]
-        
-        if node then
-            node.storyItem = storyListItem({
-                Parent = self.container,
-                path = "story item ..."
-            })
-
-            if countChildGuiObjects(node) > 1 and not node.parentItem then
-                node.parentItem = parentListItem({
-                    Parent = self.container,
-                    path = "parent item ..."
-                })
-            end
-
-            local p = moduleScript.Parent   -- TODO: handle edge cases where parent isn't in tree ????
-            local pnode = self.tree[p]
-            
-            if countChildGuiObjects(pnode) > 1 and not node.parentItem then
-                pnode.parentItem = parentListItem({
-                    Parent = self.container,
-                    path = "parent item ..."
-                })
-            end
-
-            -- TODO: push a re-render and re-layout
-        else
-            node = {
-                inst = moduleScript,
-                children = {},
-                storyItem = storyListItem({
-                    Parent = self.container,
-                    path = "story path ..."
-                }),
-                parentItem = nil,
-            }
-            self.tree[moduleScript] = node
-
-            local p = moduleScript.Parent
-            while p do
-                local pnode = self.tree[p]
-                if pnode then
-                    addChildNode(pnode, node)
-                    if p ~= game and #pnode.children > 1 and not pnode.parentItem then
-                        pnode.parentItem = parentListItem({
-                            Parent = self.container,
-                            path = "parent path ..."
-                        })
-                    end
-                    break
-                else
-                    pnode = {
-                        inst = p,
-                        children = { node }
-
-                    }
-                    self.tree[p] = pnode
-                end
-                node = pnode
-                p = p.Parent
-            end
-        end
-
-        -- self.frames[moduleScript] = storyListItem({
-        --     Parent = self.container,
-        --     moduleScript = moduleScript,
-        --     storyData = storyData,
-        -- })
-        renderTree(self, self.tree[game], Vector2.zero)
-    end
-
-    local function removeStoryModule(self, moduleScript, storyData)
-        local frame = self.frames[moduleScript]
-        self.frames[moduleScript] = nil
-        if frame then
-            frame:Destroy()
-        end
-    end
-    ]]
-
     function StoryListSection:init()
-        --[[
-        New "UIListLayout" {
-            Parent = self.container,
-            FillDirection = Enum.FillDirection.Vertical,
-            HorizontalAlignment = Enum.HorizontalAlignment.Left,
-            VerticalAlignment = Enum.VerticalAlignment.Top,
-        }
-        ]]
 
         renderStoryModules(self, State.stories)
         State.storyAdded:connect(function() 
@@ -693,17 +512,6 @@ do
         State.storyRenamed:connect(function() 
             renderRoot(self)
         end)
-        --[[
-        for moduleScript, storyData in State.stories do
-            addStoryModule(self, moduleScript, storyData)
-        end
-        State.storyAdded:connect(function(moduleScript, storyData) 
-            addStoryModule(self, moduleScript, storyData)
-        end)
-        State.storyRemoved:connect(function(moduleScript, storyData) 
-            removeStoryModule(self, moduleScript, storyData)
-        end)
-        ]]
     end
 end
 
@@ -754,6 +562,7 @@ do
             Name = "UIExplorerFrame",
             Size = UDim2.new(1, 0, 1, 0),
             BackgroundColor3 = Color3.fromHSV(UI_HUE, UI_SAT, 0.15),
+            ZIndex = ZINDEX_BACK,
 
             [Sub] = {
                 StoryListHeader = New "TextLabel" {
@@ -762,25 +571,29 @@ do
                     TextSize = 22,
                     TextColor3 = Color3.fromHSV(0, 0, 0.7),
                     Font = Enum.Font.SourceSans,
+                    ZIndex = ZINDEX_LIST,
                     Text = "Stories",
                 },
                 StoryList = New "Frame" {
                     Position = UDim2.new(0, 0, 0, 24),
                     Size = UDim2.new(0, 150, 1, -24),
                     BackgroundColor3 = Color3.fromHSV(UI_HUE, UI_SAT, 0.3),
-                    ClipsDescendants = true,
+                    ClipsDescendants = false,
+                    ZIndex = ZINDEX_LIST,
                     [Ref "storyListFrame"] = self
                 },
                 PreviewHeaderFrame = New "Frame" {
                     Position = UDim2.new(0, 150, 0, 0),
                     Size = UDim2.new(1, -150, 0, 24),
                     BackgroundColor3 = Color3.fromHSV(UI_HUE, UI_SAT, 0.2),
+                    ZIndex = ZINDEX_PREVIEW,
                     [Ref "header"] = previewProps
                 },
                 PreviewContainerFrame = New "Frame" {
                     Position = UDim2.new(0, 150, 0, 24),
                     Size = UDim2.new(1, -150, 1, -2 * 24),
                     BackgroundTransparency = 1,
+                    ZIndex = ZINDEX_PREVIEW,
                     [Ref "container"] = previewProps
                 },
                 PreviewFooterFrame = New "Frame" {
@@ -788,6 +601,7 @@ do
                     Position = UDim2.new(0, 150, 1, 0),
                     Size = UDim2.new(1, -150, 0, 24),
                     BackgroundColor3 = Color3.fromHSV(UI_HUE, UI_SAT, 0.2),
+                    ZIndex = ZINDEX_PREVIEW,
                     [Ref "footer"] = previewProps
                 }
             },
